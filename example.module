@@ -1,0 +1,45 @@
+<?php
+
+// Path of our panel.
+define('EXMPLE_PATH', 'example');
+
+/**
+ * Implements hook_ajax_render_alter().
+ */
+function example_ajax_render_alter(&$commands) {
+  if ($_GET['q'] != EXMPLE_PATH) {
+    return;
+  }
+  
+  // Facets that present on the page.
+  $facet_delta = array('apache_solr_index_author_name', 'apache_solr_index_type');
+  foreach ($facet_delta as $delta) {
+    // Load block for facet.
+    $block_array = search_api_facets_block_view($delta);
+    $delta_class = str_replace('_', '-', $delta);
+    // Render block.
+    $output = drupal_render($block_array);
+    // Show or hide block.
+    if (!empty($output)) {
+      $commands[] = ajax_command_invoke('.pane-search-api-facets-' . $delta_class, 'show');
+      $commands[] = ajax_command_replace('.pane-search-api-facets-' . $delta_class . ' .pane-content .item-list', $output);
+    }
+    else {
+      $commands[] = ajax_command_invoke('.pane-search-api-facets-' . $delta_class, 'hide');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function example_form_views_exposed_form_alter(&$form, &$form_state) {
+  if ($_GET['q'] != EXMPLE_PATH) {
+    return;
+  }
+
+  // Add action to form so it will work without javascript.
+  $form['#action'] = EXMPLE_PATH;
+  // Add javascript for facets.
+  drupal_add_js(drupal_get_path('module', 'example') . '/example.js');
+}
